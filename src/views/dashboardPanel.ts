@@ -310,11 +310,21 @@ export class DashboardPanel {
     <header class="dashboard-header">
       <div class="header-left">
         <div class="logo-badge">
-          <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
-            <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
-            <rect x="14" y="12" width="7" height="9" rx="1.5"></rect>
-            <rect x="3" y="16" width="7" height="5" rx="1.5"></rect>
+          <svg class="header-icon" viewBox="0 0 24 24" width="24" height="24">
+            <defs>
+              <linearGradient id="header-dash-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#2563eb"/>
+              </linearGradient>
+              <linearGradient id="header-dash-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+              </linearGradient>
+            </defs>
+            <rect x="3" y="3" width="7.5" height="9.5" rx="2" fill="url(#header-dash-blue)" />
+            <rect x="13.5" y="3" width="7.5" height="5.5" rx="2" fill="url(#header-dash-purple)" />
+            <rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2" fill="url(#header-dash-blue)" />
+            <rect x="3" y="15.5" width="7.5" height="5.5" rx="2" fill="url(#header-dash-purple)" />
           </svg>
           <h1>Project Dashboard</h1>
         </div>

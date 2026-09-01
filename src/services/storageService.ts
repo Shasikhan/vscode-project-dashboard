@@ -119,8 +119,9 @@ export class StorageService {
   public async saveProject(project: Project): Promise<void> {
     const data = this.getData();
     const existingIndex = data.projects.findIndex(p => p.id === project.id);
-    const sanitizedProject = {
+    const sanitizedProject: Project = {
       ...project,
+      description: project.description !== undefined ? project.description.trim() : '',
       tags: Array.isArray(project.tags) ? project.tags : []
     };
 
@@ -128,6 +129,7 @@ export class StorageService {
       data.projects[existingIndex] = {
         ...data.projects[existingIndex],
         ...sanitizedProject,
+        description: sanitizedProject.description,
         tags: sanitizedProject.tags
       };
     } else {

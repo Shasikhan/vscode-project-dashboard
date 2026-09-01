@@ -206,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Status Bar Item (Right side)
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'projectDashboard.open';
-  statusBarItem.text = '$(dashboard) Projects';
+  statusBarItem.text = '$(layout-dashboard) Projects';
   statusBarItem.tooltip = 'Open Project Dashboard (Cmd+Alt+P for Quick Switcher)';
 
   const config = vscode.workspace.getConfiguration('projectDashboard');

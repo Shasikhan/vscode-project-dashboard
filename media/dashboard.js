@@ -751,7 +751,7 @@
     const color = state.selectedColor || '#3b82f6';
     const tagsRaw = formProjectTags?.value.trim() || '';
     const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
-    const description = formProjectDescription?.value.trim() || undefined;
+    const description = formProjectDescription ? formProjectDescription.value.trim() : '';
     const favorite = formProjectFavorite?.checked || false;
 
     if (!name || !folderPath) {

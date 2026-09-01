@@ -216,7 +216,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           Categories
         </button>
-        <button id="btn-refresh-data" class="icon-button" title="Refresh Git Status">
+        <button id="btn-refresh-data" class="secondary-button btn-small" title="Refresh Git Status">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>

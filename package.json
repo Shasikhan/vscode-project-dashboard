@@ -49,7 +49,7 @@
       {
         "command": "projectDashboard.open",
         "title": "Project Dashboard: Open Dashboard",
-        "icon": "$(dashboard)"
+        "icon": "$(layout-dashboard)"
       },
       {
         "command": "projectDashboard.quickSwitch",
