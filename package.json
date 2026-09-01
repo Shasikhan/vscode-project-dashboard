@@ -1,0 +1,98 @@
+{
+  "name": "vscode-project-dashboard",
+  "displayName": "Project Dashboard",
+  "description": "Organize, categorize, color-code, and launch all your projects from a modern dashboard in VS Code.",
+  "version": "1.0.0",
+  "publisher": "project-dashboard",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "project",
+    "dashboard",
+    "manager",
+    "workspace",
+    "categories",
+    "favorites"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "projectDashboard.open",
+        "title": "Project Dashboard: Open Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "projectDashboard.addProject",
+        "title": "Project Dashboard: Add Current Folder as Project",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectDashboard.exportData",
+        "title": "Project Dashboard: Export Projects & Categories (JSON)"
+      },
+      {
+        "command": "projectDashboard.importData",
+        "title": "Project Dashboard: Import Projects & Categories (JSON)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "project-dashboard-container",
+          "title": "Project Dashboard",
+          "icon": "media/dashboard-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "project-dashboard-container": [
+        {
+          "type": "webview",
+          "id": "projectDashboard.sidebarView",
+          "name": "Projects"
+        }
+      ]
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "projectDashboard.open"
+        },
+        {
+          "command": "projectDashboard.addProject"
+        },
+        {
+          "command": "projectDashboard.exportData"
+        },
+        {
+          "command": "projectDashboard.importData"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "projectDashboard.open",
+          "when": "view == projectDashboard.sidebarView",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "node esbuild.js --production",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  }
+}
