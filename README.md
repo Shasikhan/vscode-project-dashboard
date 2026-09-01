@@ -2,7 +2,7 @@
 
 A modern, fast, and intuitive dashboard extension for Visual Studio Code to manage, color-code, categorize, and launch all your developer projects from a single unified hub.
 
-![Project Dashboard Icon](media/dashboard-icon.svg)
+![Project Dashboard Icon](media/icon.png)
 
 ## Features
 

@@ -3,11 +3,18 @@
   "displayName": "Project Dashboard",
   "description": "Organize, categorize, color-code, and launch all your projects from a modern dashboard in VS Code.",
   "version": "1.0.0",
-  "publisher": "project-dashboard",
+  "publisher": "shasikhan",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shasikhan/vscode-project-dashboard"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
+    "Productivity",
     "Other"
   ],
   "keywords": [
@@ -87,11 +94,14 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "package": "node esbuild.js --production",
+    "package-vsix": "vsce package",
+    "publish-extension": "vsce publish",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.20.0",
     "typescript": "^5.3.3"
   }
