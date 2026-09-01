@@ -119,8 +119,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  // Status Bar Item
-  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  // Status Bar Item (Right side)
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'projectDashboard.open';
   statusBarItem.text = '$(dashboard) Projects';
   statusBarItem.tooltip = 'Open Project Dashboard';
