@@ -22,6 +22,8 @@ export interface Project {
   color: string;
   categoryId: string;
   description?: string;
+  tags?: string[];
+  techStack?: string[];
   favorite?: boolean;
   lastOpened?: number;
   createdAt: number;
@@ -29,9 +31,16 @@ export interface Project {
   gitInfo?: GitInfo;
 }
 
+export interface UserPreferences {
+  sortBy: string;
+  viewMode: 'grid' | 'list';
+  selectedCategory: string;
+}
+
 export interface DashboardData {
   projects: Project[];
   categories: Category[];
+  preferences?: UserPreferences;
 }
 
 export type WebviewToHostMessage =
@@ -39,6 +48,9 @@ export type WebviewToHostMessage =
   | { command: 'refreshGitStatus' }
   | { command: 'pickFolder'; targetField?: 'path' }
   | { command: 'openProject'; path: string; newWindow: boolean; projectId: string }
+  | { command: 'openTerminal'; path: string; name: string }
+  | { command: 'revealInFinder'; path: string }
+  | { command: 'savePreferences'; preferences: Partial<UserPreferences> }
   | { command: 'saveProject'; project: Project }
   | { command: 'deleteProject'; id: string }
   | { command: 'toggleFavorite'; id: string }

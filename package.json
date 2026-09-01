@@ -26,12 +26,35 @@
     "favorites"
   ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "*"
+  ],
   "contributes": {
+    "configuration": {
+      "title": "Project Dashboard",
+      "properties": {
+        "projectDashboard.openOnStartupWhenEmpty": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically open Project Dashboard when VS Code starts with no folder or workspace open."
+        },
+        "projectDashboard.showStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Project Dashboard button in the status bar."
+        }
+      }
+    },
     "commands": [
       {
         "command": "projectDashboard.open",
         "title": "Project Dashboard: Open Dashboard",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "projectDashboard.quickSwitch",
+        "title": "Project Dashboard: Quick Switcher",
+        "icon": "$(list-unordered)"
       },
       {
         "command": "projectDashboard.addProject",
@@ -45,6 +68,13 @@
       {
         "command": "projectDashboard.importData",
         "title": "Project Dashboard: Import Projects & Categories (JSON)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "projectDashboard.quickSwitch",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
       }
     ],
     "viewsContainers": {
@@ -71,6 +101,9 @@
           "command": "projectDashboard.open"
         },
         {
+          "command": "projectDashboard.quickSwitch"
+        },
+        {
           "command": "projectDashboard.addProject"
         },
         {
@@ -94,8 +127,8 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "package": "node esbuild.js --production",
-    "package-vsix": "vsce package",
-    "publish-extension": "vsce publish",
+    "package-vsix": "vsce package --allow-star-activation",
+    "publish-extension": "vsce publish --allow-star-activation",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

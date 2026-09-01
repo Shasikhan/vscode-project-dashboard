@@ -379,8 +379,8 @@ body.is-sidebar .toolbar-section {
 
 .project-card:hover {
   transform: translateY(-2px);
-  border-color: var(--vscode-focusBorder);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: var(--project-color, var(--vscode-focusBorder));
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
 }
 
 body.is-sidebar .project-card {
@@ -935,4 +935,111 @@ input[type="color"]::-webkit-color-swatch {
 .is-spinning svg {
   animation: spin 0.8s linear infinite;
 }
+
+/* Tech Stack & Tags */
+.project-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tech-stack-badge {
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.15));
+  color: var(--vscode-badge-foreground, var(--vscode-foreground));
+  border: 1px solid var(--card-border);
+  letter-spacing: 0.01em;
+}
+
+.project-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 1px 6px 1px 7px;
+  border-radius: var(--radius-full);
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--vscode-textLink-foreground, #3b82f6);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.btn-remove-tag {
+  background: transparent;
+  border: none;
+  color: currentColor;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0.6;
+  cursor: pointer;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-tag:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+/* Skeleton Loading State */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-card {
+  background: var(--vscode-editorWidget-background, var(--card-bg));
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  border-top: 4px solid var(--card-border);
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(128, 128, 128, 0.08) 25%, rgba(128, 128, 128, 0.18) 50%, rgba(128, 128, 128, 0.08) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-title {
+  height: 18px;
+  width: 55%;
+}
+
+.skeleton-subtitle {
+  height: 11px;
+  width: 35%;
+}
+
+.skeleton-desc {
+  height: 11px;
+  width: 85%;
+}
+
+.skeleton-path {
+  height: 11px;
+  width: 70%;
+}
+
+.skeleton-tags {
+  height: 16px;
+  width: 45%;
+  border-radius: var(--radius-full);
+}
+
+
 

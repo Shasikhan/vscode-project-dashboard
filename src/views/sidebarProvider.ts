@@ -49,10 +49,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       switch (message.command) {
         case 'getInitialData':
         case 'refreshGitStatus': {
-          const data = await this._storageService.getDataAsync();
+          const immediateData = this._storageService.getData();
           this._view?.webview.postMessage({
             command: 'setData',
-            data
+            data: immediateData
+          });
+
+          this._storageService.getDataAsync().then(enrichedData => {
+            this._view?.webview.postMessage({
+              command: 'setData',
+              data: enrichedData
+            });
+          }).catch(err => {
+            console.error('Failed to enrich projects in sidebar async:', err);
           });
           break;
         }
@@ -88,6 +97,34 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           } catch (err: any) {
             vscode.window.showErrorMessage(`Failed to open project: ${err?.message || err}`);
           }
+          break;
+        }
+
+        case 'openTerminal': {
+          try {
+            const terminal = vscode.window.createTerminal({
+              name: message.name || path.basename(message.path),
+              cwd: message.path
+            });
+            terminal.show();
+          } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to open terminal: ${err?.message || err}`);
+          }
+          break;
+        }
+
+        case 'revealInFinder': {
+          try {
+            const uri = vscode.Uri.file(message.path);
+            await vscode.commands.executeCommand('revealFileInOS', uri);
+          } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to reveal folder: ${err?.message || err}`);
+          }
+          break;
+        }
+
+        case 'savePreferences': {
+          await this._storageService.updatePreferences(message.preferences);
           break;
         }
 
@@ -148,6 +185,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     );
 
     const nonce = getNonce();
+    const initialData = this._storageService.getData();
+    const initialDataJson = JSON.stringify(initialData).replace(/</g, '\\u003c');
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -171,13 +210,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       <div class="sidebar-actions-row">
         <button id="btn-add-project" class="secondary-button btn-small flex-1" title="Add Project">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          New Project
+          Add
         </button>
-        <button id="btn-refresh-data" class="secondary-button btn-small" title="Refresh Git Status">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        </button>
-        <button id="btn-manage-categories" class="secondary-button btn-small" title="Manage Categories">
+        <button id="btn-manage-categories" class="secondary-button btn-small flex-1" title="Manage Categories">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          Categories
+        </button>
+        <button id="btn-refresh-data" class="icon-button" title="Refresh Git Status">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>
     </header>
@@ -218,45 +258,38 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       </div>
       <form id="project-form">
         <input type="hidden" id="form-project-id" />
-
         <div class="form-group">
           <label for="form-project-name">Name <span class="required">*</span></label>
-          <input type="text" id="form-project-name" class="form-input" placeholder="e.g. My App" required />
+          <input type="text" id="form-project-name" class="form-input" required />
         </div>
-
         <div class="form-group">
-          <label for="form-project-path">Folder <span class="required">*</span></label>
+          <label for="form-project-path">Folder Path <span class="required">*</span></label>
           <div class="path-input-group">
-            <input type="text" id="form-project-path" class="form-input" placeholder="/path/to/folder" required />
-            <button type="button" id="btn-browse-folder" class="secondary-button browse-btn" title="Browse">
-              📁
-            </button>
+            <input type="text" id="form-project-path" class="form-input" required />
+            <button type="button" id="btn-browse-folder" class="secondary-button browse-btn">Browse</button>
           </div>
         </div>
-
         <div class="form-group">
           <label for="form-project-category">Category</label>
           <select id="form-project-category" class="form-select"></select>
         </div>
-
         <div class="form-group">
           <label>Color Accent</label>
           <div class="color-picker-container">
             <div class="color-presets" id="color-presets"></div>
-            <div class="custom-color-wrapper">
-              <input type="color" id="form-project-color" value="#3b82f6" />
-              <span id="custom-color-hex" class="hex-label">#3b82f6</span>
-            </div>
+            <input type="color" id="form-project-color" value="#3b82f6" />
           </div>
         </div>
-
+        <div class="form-group">
+          <label for="form-project-tags">Tags (Optional)</label>
+          <input type="text" id="form-project-tags" class="form-input" placeholder="e.g. Frontend, API" />
+        </div>
         <div class="form-group checkbox-group">
           <label class="checkbox-label">
             <input type="checkbox" id="form-project-favorite" />
             <span>Pin as Favorite</span>
           </label>
         </div>
-
         <div class="modal-footer">
           <button type="button" id="btn-cancel-project" class="secondary-button">Cancel</button>
           <button type="submit" id="btn-save-project" class="primary-button">Save</button>
@@ -277,14 +310,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           <input type="hidden" id="form-cat-id" />
           <div class="form-group">
             <label for="form-cat-name">Category Name</label>
-            <input type="text" id="form-cat-name" class="form-input" placeholder="e.g. Work" required />
+            <input type="text" id="form-cat-name" class="form-input" required />
           </div>
           <div class="form-group">
             <label>Color</label>
             <div class="cat-color-row">
               <input type="color" id="form-cat-color" value="#3b82f6" />
               <button type="submit" id="btn-save-category" class="primary-button btn-small">Save</button>
-              <button type="button" id="btn-cancel-cat-edit" class="secondary-button btn-small" style="display: none;">Cancel</button>
             </div>
           </div>
         </form>
@@ -299,6 +331,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     </div>
   </div>
 
+  <script nonce="${nonce}">
+    window.INITIAL_DATA = ${initialDataJson};
+  </script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

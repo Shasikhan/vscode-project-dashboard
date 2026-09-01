@@ -1,10 +1,18 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Project, Category, DashboardData } from '../models/project';
+import { Project, Category, DashboardData, UserPreferences } from '../models/project';
 import { GitService } from './gitService';
+import { TechStackService } from './techStackService';
 
 const STORAGE_KEY_PROJECTS = 'projectDashboard.projects';
 const STORAGE_KEY_CATEGORIES = 'projectDashboard.categories';
+const STORAGE_KEY_PREFERENCES = 'projectDashboard.preferences';
+
+export const DEFAULT_PREFERENCES: UserPreferences = {
+  sortBy: 'recent',
+  viewMode: 'grid',
+  selectedCategory: 'all'
+};
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'cat-work', name: 'Work', color: '#3b82f6', icon: 'briefcase' },
@@ -50,8 +58,22 @@ export class StorageService {
     }
   }
 
+  public getPreferences(): UserPreferences {
+    return this.context.globalState.get<UserPreferences>(STORAGE_KEY_PREFERENCES) || DEFAULT_PREFERENCES;
+  }
+
+  public async updatePreferences(prefs: Partial<UserPreferences>): Promise<void> {
+    const current = this.getPreferences();
+    const updated: UserPreferences = {
+      ...current,
+      ...prefs
+    };
+    await this.context.globalState.update(STORAGE_KEY_PREFERENCES, updated);
+  }
+
   public getData(): DashboardData {
     const categories = this.context.globalState.get<Category[]>(STORAGE_KEY_CATEGORIES) || DEFAULT_CATEGORIES;
+    const preferences = this.getPreferences();
     const projects = (this.context.globalState.get<Project[]>(STORAGE_KEY_PROJECTS) || []).map(p => {
       let exists = false;
       try {
@@ -69,36 +91,47 @@ export class StorageService {
 
     return {
       projects,
-      categories
+      categories,
+      preferences
     };
   }
 
   public async getDataAsync(): Promise<DashboardData> {
     const baseData = this.getData();
-    const gitMap = await GitService.enrichProjectsWithGit(baseData.projects);
+    const [gitMap, techMap] = await Promise.all([
+      GitService.enrichProjectsWithGit(baseData.projects),
+      TechStackService.enrichProjectsWithTechStack(baseData.projects)
+    ]);
 
     const enrichedProjects = baseData.projects.map(p => ({
       ...p,
-      gitInfo: gitMap.get(p.path)
+      gitInfo: gitMap.get(p.path),
+      techStack: techMap.get(p.path) || []
     }));
 
     return {
       projects: enrichedProjects,
-      categories: baseData.categories
+      categories: baseData.categories,
+      preferences: baseData.preferences
     };
   }
 
   public async saveProject(project: Project): Promise<void> {
     const data = this.getData();
     const existingIndex = data.projects.findIndex(p => p.id === project.id);
+    const sanitizedProject = {
+      ...project,
+      tags: Array.isArray(project.tags) ? project.tags : []
+    };
 
     if (existingIndex >= 0) {
       data.projects[existingIndex] = {
         ...data.projects[existingIndex],
-        ...project,
+        ...sanitizedProject,
+        tags: sanitizedProject.tags
       };
     } else {
-      data.projects.unshift(project);
+      data.projects.unshift(sanitizedProject);
     }
 
     await this.context.globalState.update(STORAGE_KEY_PROJECTS, data.projects);

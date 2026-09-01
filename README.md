@@ -7,9 +7,12 @@ A modern, fast, and intuitive dashboard extension for Visual Studio Code to mana
 ## Features
 
 - 📁 **Centralized Project Management**: Name your projects and easily select project folder paths using the native file dialog.
+- ⚡ **Quick Switcher Palette (`Cmd+Alt+P` / `Ctrl+Alt+P`)**: Fast, keyboard-first switcher menu with fuzzy search, git branch preview, and direct launch actions.
+- 🔍 **Auto-Detected Tech Stack (Zero-Config)**: Automatically detects and displays framework & language badges (React, Next.js, Vue, TypeScript, Rust, Python, Go, PHP, etc.).
 - 🌿 **Git Status Detection**: Live git branch name, working tree dirty/clean status, uncommitted changes counter, and ahead/behind remote sync indicators directly on each project card.
+- 🖥️ **Integrated Terminal & Finder Shortcuts**: Open an integrated terminal directly in the project directory or reveal the folder in Finder/File Explorer with one click.
+- 🏷️ **Multi-Tagging & Categories**: Create custom categories and add multi-tag chips (e.g. `#Frontend`, `#API`, `#Client-A`) with full cross-filtering and search support.
 - 🎨 **Color Coding**: Assign custom or preset accent colors to each project for instant visual identification.
-- 🏷️ **Custom Categories**: Create, edit, and organize projects into categories (e.g. *Work*, *Personal*, *Open Source*, *Client Work*) with custom category badges.
 - 🚀 **Quick Launching**: Open any project in the current window or launch it in a new VS Code window with one click.
 - 🔍 **Search & Filter**: Real-time searching across project names, paths, descriptions, and category tags.
 - ⭐ **Favorites & Pinning**: Pin your most critical projects to keep them pinned at the top.
@@ -24,14 +27,14 @@ A modern, fast, and intuitive dashboard extension for Visual Studio Code to mana
 
 ### 1. Launching the Dashboard
 - **Command Palette**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) and run `Project Dashboard: Open Dashboard`.
-- **Status Bar**: Click the `$(dashboard) Projects` button in the bottom left status bar.
+- **Status Bar**: Click the `$(dashboard) Projects` button in the status bar (right side).
 - **Activity Bar**: Click the Project Dashboard icon in the activity bar sidebar.
 
 ### 2. Adding a Project
 1. Click **New Project** in the dashboard header or sidebar.
 2. Enter the project name and description.
 3. Click **Browse** to choose the project folder on your disk.
-4. Pick a color accent and select a category.
+4. Pick a color accent, custom tags, and select a category.
 5. Click **Save Project**.
 
 > **Tip**: If you currently have a project folder open in VS Code, run `Project Dashboard: Add Current Folder as Project` to quickly add it with one step!
@@ -44,6 +47,17 @@ A modern, fast, and intuitive dashboard extension for Visual Studio Code to mana
 ### 4. Backing Up & Syncing
 - Click **Export** to save a `.json` backup file of all your projects and categories.
 - Click **Import** to load a previously saved `.json` file on any computer.
+
+---
+
+## Extension Settings
+
+Configure these options in VS Code Settings (`Cmd+,` or `Ctrl+,`):
+
+| Setting | Default | Description |
+| :--- | :--- | :--- |
+| `projectDashboard.openOnStartupWhenEmpty` | `false` | Automatically opens Project Dashboard on launch when no folder or workspace is open. |
+| `projectDashboard.showStatusBarItem` | `true` | Shows/hides the `$(dashboard) Projects` status bar button on the right side. |
 
 ---
 

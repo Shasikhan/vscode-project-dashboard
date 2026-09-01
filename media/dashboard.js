@@ -18,18 +18,38 @@
     '#64748b'  // Slate
   ];
 
+  // Retrieve saved webview preferences (persisted across sessions/reloads)
+  const savedState = vscode.getState() || {};
+
   // State
   let state = {
     projects: [],
     categories: [],
-    selectedCategory: 'all', // 'all' | 'favorites' | categoryId
+    selectedCategory: savedState.selectedCategory || 'all', // 'all' | 'favorites' | categoryId
     searchQuery: '',
-    sortBy: 'recent',
-    viewMode: 'grid', // 'grid' | 'list'
+    sortBy: savedState.sortBy || 'recent',
+    viewMode: savedState.viewMode || 'grid', // 'grid' | 'list'
     editingProjectId: null,
     editingCategoryId: null,
     selectedColor: PRESET_COLORS[0]
   };
+
+  function saveWebviewState() {
+    vscode.setState({
+      sortBy: state.sortBy,
+      viewMode: state.viewMode,
+      selectedCategory: state.selectedCategory
+    });
+    // Persist globally into VS Code globalState via extension host
+    vscode.postMessage({
+      command: 'savePreferences',
+      preferences: {
+        sortBy: state.sortBy,
+        viewMode: state.viewMode,
+        selectedCategory: state.selectedCategory
+      }
+    });
+  }
 
   // DOM Elements
   const projectsContainer = document.getElementById('projects-container');
@@ -65,6 +85,7 @@
   const formProjectPath = document.getElementById('form-project-path');
   const formProjectCategory = document.getElementById('form-project-category');
   const formProjectColor = document.getElementById('form-project-color');
+  const formProjectTags = document.getElementById('form-project-tags');
   const formProjectDescription = document.getElementById('form-project-description');
   const formProjectFavorite = document.getElementById('form-project-favorite');
   const btnBrowseFolder = document.getElementById('btn-browse-folder');
@@ -83,11 +104,62 @@
   const btnCancelCatEdit = document.getElementById('btn-cancel-cat-edit');
   const categoriesManageList = document.getElementById('categories-manage-list');
 
+  // Render Skeleton Cards while loading
+  function renderSkeletons(count = 4) {
+    if (!projectsContainer) return;
+    projectsContainer.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const skel = document.createElement('div');
+      skel.className = 'skeleton-card';
+      skel.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="skeleton-line skeleton-title"></div>
+          <div class="skeleton-line skeleton-subtitle"></div>
+        </div>
+        <div class="skeleton-line skeleton-desc"></div>
+        <div class="skeleton-line skeleton-path"></div>
+        <div class="skeleton-line skeleton-tags"></div>
+      `;
+      projectsContainer.appendChild(skel);
+    }
+  }
+
   // Initialize
   function init() {
+    if (window.INITIAL_DATA) {
+      state.projects = window.INITIAL_DATA.projects || [];
+      state.categories = window.INITIAL_DATA.categories || [];
+      if (window.INITIAL_DATA.preferences) {
+        if (window.INITIAL_DATA.preferences.sortBy) {
+          state.sortBy = window.INITIAL_DATA.preferences.sortBy;
+        }
+        if (window.INITIAL_DATA.preferences.viewMode) {
+          state.viewMode = window.INITIAL_DATA.preferences.viewMode;
+        }
+        if (window.INITIAL_DATA.preferences.selectedCategory && state.selectedCategory === 'all') {
+          state.selectedCategory = window.INITIAL_DATA.preferences.selectedCategory;
+        }
+      }
+    }
+
+    if (sortSelect) {
+      sortSelect.value = state.sortBy;
+    }
+    if (state.viewMode === 'list') {
+      btnViewList?.classList.add('active');
+      btnViewGrid?.classList.remove('active');
+      projectsContainer?.classList.add('is-list-view');
+    }
     setupColorPresets();
     setupEventListeners();
-    // Request data from host
+
+    if (state.projects && state.projects.length > 0) {
+      render();
+    } else {
+      renderSkeletons(4);
+    }
+
+    // Request fresh/enriched background data from host
     vscode.postMessage({ command: 'getInitialData' });
   }
 
@@ -130,6 +202,27 @@
         case 'setData':
           state.projects = message.data.projects || [];
           state.categories = message.data.categories || [];
+          if (message.data.preferences) {
+            if (message.data.preferences.sortBy) {
+              state.sortBy = message.data.preferences.sortBy;
+              if (sortSelect) sortSelect.value = state.sortBy;
+            }
+            if (message.data.preferences.viewMode) {
+              state.viewMode = message.data.preferences.viewMode;
+              if (state.viewMode === 'list') {
+                btnViewList?.classList.add('active');
+                btnViewGrid?.classList.remove('active');
+                projectsContainer?.classList.add('is-list-view');
+              } else {
+                btnViewGrid?.classList.add('active');
+                btnViewList?.classList.remove('active');
+                projectsContainer?.classList.remove('is-list-view');
+              }
+            }
+            if (message.data.preferences.selectedCategory && state.selectedCategory === 'all') {
+              state.selectedCategory = message.data.preferences.selectedCategory;
+            }
+          }
           render();
           break;
         case 'folderPicked':
@@ -142,6 +235,7 @@
           break;
         case 'filterCategory':
           state.selectedCategory = message.categoryId;
+          saveWebviewState();
           render();
           break;
       }
@@ -167,18 +261,20 @@
       });
     }
 
-    // Sort Dropdown
+    // Sort Dropdown (Preserved in webview state)
     if (sortSelect) {
       sortSelect.addEventListener('change', e => {
         state.sortBy = e.target.value;
+        saveWebviewState();
         renderProjects();
       });
     }
 
-    // View Toggles
+    // View Toggles (Preserved in webview state)
     if (btnViewGrid && btnViewList) {
       btnViewGrid.addEventListener('click', () => {
         state.viewMode = 'grid';
+        saveWebviewState();
         btnViewGrid.classList.add('active');
         btnViewList.classList.remove('active');
         projectsContainer?.classList.remove('is-list-view');
@@ -186,6 +282,7 @@
 
       btnViewList.addEventListener('click', () => {
         state.viewMode = 'list';
+        saveWebviewState();
         btnViewList.classList.add('active');
         btnViewGrid.classList.remove('active');
         projectsContainer?.classList.add('is-list-view');
@@ -310,6 +407,7 @@
 
     chip.addEventListener('click', () => {
       state.selectedCategory = id;
+      saveWebviewState();
       renderCategoryFilters();
       renderProjects();
     });
@@ -347,9 +445,11 @@
         const nameMatch = p.name.toLowerCase().includes(q);
         const pathMatch = p.path.toLowerCase().includes(q);
         const descMatch = p.description && p.description.toLowerCase().includes(q);
+        const tagsMatch = p.tags && p.tags.some(t => t.toLowerCase().includes(q));
+        const techMatch = p.techStack && p.techStack.some(t => t.toLowerCase().includes(q));
         const cat = state.categories.find(c => c.id === p.categoryId);
         const catMatch = cat && cat.name.toLowerCase().includes(q);
-        return nameMatch || pathMatch || descMatch || catMatch;
+        return nameMatch || pathMatch || descMatch || tagsMatch || techMatch || catMatch;
       }
 
       return true;
@@ -412,7 +512,9 @@
   function createProjectCard(project) {
     const card = document.createElement('div');
     card.className = 'project-card';
-    card.style.borderTopColor = project.color || '#3b82f6';
+    const projectColor = project.color || '#3b82f6';
+    card.style.setProperty('--project-color', projectColor);
+    card.style.borderTopColor = projectColor;
 
     const category = state.categories.find(c => c.id === project.categoryId);
     const categoryName = category ? category.name : (project.categoryId ? 'Unknown' : '');
@@ -438,6 +540,12 @@
         </div>
 
         <div class="project-card-actions">
+          <button class="card-action-btn btn-open-terminal" title="Open Integrated Terminal Here">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          </button>
+          <button class="card-action-btn btn-reveal-folder" title="Reveal in Finder / Explorer">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          </button>
           <button class="card-action-btn edit-btn" title="Edit Project">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </button>
@@ -457,6 +565,18 @@
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </button>
         </div>
+
+        ${(project.techStack && project.techStack.length > 0) || (project.tags && project.tags.length > 0) ? `
+          <div class="project-tags-row">
+            ${(project.techStack || []).map(t => `<span class="tech-stack-badge">${escapeHtml(t)}</span>`).join('')}
+            ${(project.tags || []).map(t => `
+              <span class="project-tag">
+                #${escapeHtml(t)}
+                <button type="button" class="btn-remove-tag" data-tag="${escapeHtml(t)}" title="Remove tag ${escapeHtml(t)}">&times;</button>
+              </span>
+            `).join('')}
+          </div>
+        ` : ''}
 
         ${project.gitInfo && project.gitInfo.isGit ? `
           <div class="project-git-row">
@@ -523,11 +643,46 @@
     nameEl?.addEventListener('click', () => handleOpen(false));
     openNewWindowBtn?.addEventListener('click', () => handleOpen(true));
 
+    // Terminal button
+    const terminalBtn = card.querySelector('.btn-open-terminal');
+    terminalBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vscode.postMessage({
+        command: 'openTerminal',
+        path: project.path,
+        name: project.name
+      });
+    });
+
+    // Reveal Folder button
+    const revealBtn = card.querySelector('.btn-reveal-folder');
+    revealBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vscode.postMessage({
+        command: 'revealInFinder',
+        path: project.path
+      });
+    });
+
     // Star / Favorite
     const starBtn = card.querySelector('.btn-star');
     starBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       vscode.postMessage({ command: 'toggleFavorite', id: project.id });
+    });
+
+    // Remove single tag button on card
+    card.querySelectorAll('.btn-remove-tag').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tagToRemove = btn.dataset.tag;
+        const updatedTags = (project.tags || []).filter(t => t !== tagToRemove);
+        const updatedProject = { ...project, tags: updatedTags };
+        vscode.postMessage({
+          command: 'saveProject',
+          project: updatedProject
+        });
+      });
     });
 
     // Copy Path
@@ -572,6 +727,7 @@
     if (formProjectName) formProjectName.value = project ? project.name : '';
     if (formProjectPath) formProjectPath.value = project ? project.path : '';
     if (formProjectCategory) formProjectCategory.value = project ? project.categoryId : (state.selectedCategory !== 'all' && state.selectedCategory !== 'favorites' && state.selectedCategory !== 'uncategorized' ? state.selectedCategory : '');
+    if (formProjectTags) formProjectTags.value = (project && project.tags) ? project.tags.join(', ') : '';
     if (formProjectDescription) formProjectDescription.value = (project && project.description) || '';
     if (formProjectFavorite) formProjectFavorite.checked = !!(project && project.favorite);
 
@@ -593,6 +749,8 @@
     const folderPath = formProjectPath?.value.trim();
     const categoryId = formProjectCategory?.value || '';
     const color = state.selectedColor || '#3b82f6';
+    const tagsRaw = formProjectTags?.value.trim() || '';
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
     const description = formProjectDescription?.value.trim() || undefined;
     const favorite = formProjectFavorite?.checked || false;
 
@@ -615,6 +773,7 @@
       path: folderPath,
       color,
       categoryId,
+      tags,
       description,
       favorite,
       createdAt: existing ? existing.createdAt : Date.now(),

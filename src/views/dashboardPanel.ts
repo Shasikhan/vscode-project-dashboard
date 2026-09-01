@@ -92,10 +92,21 @@ export class DashboardPanel {
   }
 
   private async _sendData() {
-    const data = await this._storageService.getDataAsync();
+    // 1. Send cached/base data immediately so UI renders in <2ms
+    const immediateData = this._storageService.getData();
     this._panel.webview.postMessage({
       command: 'setData',
-      data
+      data: immediateData
+    });
+
+    // 2. Enrich with Git status and Tech Stack detection in background
+    this._storageService.getDataAsync().then(enrichedData => {
+      this._panel.webview.postMessage({
+        command: 'setData',
+        data: enrichedData
+      });
+    }).catch(err => {
+      console.error('Failed to enrich projects async:', err);
     });
   }
 
@@ -139,6 +150,34 @@ export class DashboardPanel {
         } catch (err: any) {
           vscode.window.showErrorMessage(`Failed to open project: ${err?.message || err}`);
         }
+        break;
+      }
+
+      case 'openTerminal': {
+        try {
+          const terminal = vscode.window.createTerminal({
+            name: message.name || path.basename(message.path),
+            cwd: message.path
+          });
+          terminal.show();
+        } catch (err: any) {
+          vscode.window.showErrorMessage(`Failed to open terminal: ${err?.message || err}`);
+        }
+        break;
+      }
+
+      case 'revealInFinder': {
+        try {
+          const uri = vscode.Uri.file(message.path);
+          await vscode.commands.executeCommand('revealFileInOS', uri);
+        } catch (err: any) {
+          vscode.window.showErrorMessage(`Failed to reveal folder: ${err?.message || err}`);
+        }
+        break;
+      }
+
+      case 'savePreferences': {
+        await this._storageService.updatePreferences(message.preferences);
         break;
       }
 
@@ -253,6 +292,8 @@ export class DashboardPanel {
     );
 
     const nonce = getNonce();
+    const initialData = this._storageService.getData();
+    const initialDataJson = JSON.stringify(initialData).replace(/</g, '\\u003c');
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -284,23 +325,23 @@ export class DashboardPanel {
       </div>
 
       <div class="header-actions">
-        <button id="btn-refresh-data" class="secondary-button" title="Refresh Projects and Git Status">
+        <button id="btn-refresh-data" class="secondary-button" title="Refresh Git Status & Projects">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Refresh
         </button>
-        <button id="btn-export-data" class="secondary-button" title="Export Projects & Categories to JSON">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <button id="btn-export-data" class="secondary-button" title="Export Projects (JSON)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Export
         </button>
-        <button id="btn-import-data" class="secondary-button" title="Import from JSON Backup">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <button id="btn-import-data" class="secondary-button" title="Import Projects (JSON)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
           Import
         </button>
-        <button id="btn-manage-categories" class="secondary-button" title="Manage Categories">
+        <button id="btn-manage-categories" class="secondary-button">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
           Categories
         </button>
-        <button id="btn-add-project" class="primary-button" title="Add New Project">
+        <button id="btn-add-project" class="primary-button">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           New Project
         </button>
@@ -314,7 +355,7 @@ export class DashboardPanel {
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="project-search-input" placeholder="Search projects by name, path or description..." autocomplete="off" />
+        <input type="text" id="project-search-input" placeholder="Search projects by name, path or tag..." autocomplete="off" />
         <button id="btn-clear-search" class="clear-search-btn" title="Clear Search" style="display: none;">&times;</button>
       </div>
 
@@ -376,6 +417,7 @@ export class DashboardPanel {
         <h2 id="modal-project-title">Add Project</h2>
         <button id="btn-close-project-modal" class="modal-close-btn">&times;</button>
       </div>
+
       <form id="project-form">
         <input type="hidden" id="form-project-id" />
 
@@ -389,7 +431,6 @@ export class DashboardPanel {
           <div class="path-input-group">
             <input type="text" id="form-project-path" class="form-input" placeholder="/Users/username/projects/my-app" required />
             <button type="button" id="btn-browse-folder" class="secondary-button browse-btn" title="Browse Folder">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
               Browse
             </button>
           </div>
@@ -411,15 +452,20 @@ export class DashboardPanel {
               </div>
               <div class="custom-color-wrapper">
                 <input type="color" id="form-project-color" value="#3b82f6" title="Custom color" />
-                <span id="custom-color-hex" class="hex-label">#3b82f6</span>
+                <span id="custom-color-hex" class="hex-label">#3B82F6</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="form-group">
+          <label for="form-project-tags">Tags (Optional, comma-separated)</label>
+          <input type="text" id="form-project-tags" class="form-input" placeholder="e.g. Frontend, API, Client-A, WIP" />
+        </div>
+
+        <div class="form-group">
           <label for="form-project-description">Description (Optional)</label>
-          <textarea id="form-project-description" class="form-textarea" rows="2" placeholder="Brief notes, technologies used, or client info..."></textarea>
+          <textarea id="form-project-description" class="form-textarea" rows="2" placeholder="Brief project summary..."></textarea>
         </div>
 
         <div class="form-group checkbox-group">
@@ -478,6 +524,9 @@ export class DashboardPanel {
     </div>
   </div>
 
+  <script nonce="${nonce}">
+    window.INITIAL_DATA = ${initialDataJson};
+  </script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

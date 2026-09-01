@@ -119,19 +119,129 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
+  // Command: Quick Switcher via Command Palette (Cmd+Alt+P / Ctrl+Alt+P)
+  const quickSwitchCmd = vscode.commands.registerCommand('projectDashboard.quickSwitch', async () => {
+    const data = await storageService.getDataAsync();
+    if (data.projects.length === 0) {
+      const choice = await vscode.window.showInformationMessage(
+        'No projects found in Project Dashboard. Would you like to open the dashboard and add one?',
+        'Open Dashboard'
+      );
+      if (choice === 'Open Dashboard') {
+        DashboardPanel.createOrShow(context.extensionUri);
+      }
+      return;
+    }
+
+    const categoriesMap = new Map(data.categories.map(c => [c.id, c.name]));
+
+    const openInNewWindowBtn: vscode.QuickInputButton = {
+      iconPath: new vscode.ThemeIcon('link-external'),
+      tooltip: 'Open in New Window'
+    };
+    const openTerminalBtn: vscode.QuickInputButton = {
+      iconPath: new vscode.ThemeIcon('terminal'),
+      tooltip: 'Open Terminal Here'
+    };
+    const revealFolderBtn: vscode.QuickInputButton = {
+      iconPath: new vscode.ThemeIcon('folder-opened'),
+      tooltip: 'Reveal in Finder / File Explorer'
+    };
+
+    interface ProjectQuickPickItem extends vscode.QuickPickItem {
+      project: Project;
+    }
+
+    const items: ProjectQuickPickItem[] = data.projects.map(p => {
+      const catName = categoriesMap.get(p.categoryId) || (p.categoryId ? 'Uncategorized' : '');
+      const parts: string[] = [];
+      if (catName) parts.push(`[${catName}]`);
+      if (p.gitInfo?.branch) parts.push(`🌿 ${p.gitInfo.branch}${p.gitInfo.clean ? ' ✓' : ' ●'}`);
+      if (p.techStack && p.techStack.length > 0) parts.push(`(${p.techStack.slice(0, 3).join(', ')})`);
+
+      return {
+        label: `${p.favorite ? '$(star-full) ' : '$(folder) '}${p.name}`,
+        description: parts.join(' '),
+        detail: p.path + (p.description ? ` — ${p.description}` : ''),
+        buttons: [revealFolderBtn, openTerminalBtn, openInNewWindowBtn],
+        project: p
+      };
+    });
+
+    const quickPick = vscode.window.createQuickPick<ProjectQuickPickItem>();
+    quickPick.items = items;
+    quickPick.placeholder = 'Search and switch to any project...';
+    quickPick.matchOnDescription = true;
+    quickPick.matchOnDetail = true;
+
+    quickPick.onDidTriggerItemButton(async (e) => {
+      const p = e.item.project;
+      if (e.button === openInNewWindowBtn) {
+        await storageService.recordProjectOpen(p.id);
+        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(p.path), { forceNewWindow: true });
+        quickPick.hide();
+      } else if (e.button === openTerminalBtn) {
+        const terminal = vscode.window.createTerminal({ name: p.name, cwd: p.path });
+        terminal.show();
+        quickPick.hide();
+      } else if (e.button === revealFolderBtn) {
+        vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(p.path));
+      }
+    });
+
+    quickPick.onDidAccept(async () => {
+      const selected = quickPick.selectedItems[0];
+      if (selected) {
+        const p = selected.project;
+        await storageService.recordProjectOpen(p.id);
+        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(p.path), { forceNewWindow: false });
+      }
+      quickPick.hide();
+    });
+
+    quickPick.onDidHide(() => quickPick.dispose());
+    quickPick.show();
+  });
+
   // Status Bar Item (Right side)
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'projectDashboard.open';
   statusBarItem.text = '$(dashboard) Projects';
-  statusBarItem.tooltip = 'Open Project Dashboard';
-  statusBarItem.show();
+  statusBarItem.tooltip = 'Open Project Dashboard (Cmd+Alt+P for Quick Switcher)';
+
+  const config = vscode.workspace.getConfiguration('projectDashboard');
+  const showStatusBar = config.get<boolean>('showStatusBarItem', true);
+  if (showStatusBar) {
+    statusBarItem.show();
+  }
+
+  // Handle configuration changes dynamically
+  const configListener = vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration('projectDashboard.showStatusBarItem')) {
+      const shouldShow = vscode.workspace.getConfiguration('projectDashboard').get<boolean>('showStatusBarItem', true);
+      if (shouldShow) {
+        statusBarItem.show();
+      } else {
+        statusBarItem.hide();
+      }
+    }
+  });
+
+  // Automatically open dashboard immediately when VS Code starts with no folder open (if configured)
+  const openOnStartupWhenEmpty = config.get<boolean>('openOnStartupWhenEmpty', false);
+  const isWorkspaceEmpty = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+  if (openOnStartupWhenEmpty && isWorkspaceEmpty) {
+    DashboardPanel.createOrShow(context.extensionUri);
+  }
 
   context.subscriptions.push(
     openDashboardCmd,
+    quickSwitchCmd,
     addCurrentProjectCmd,
     exportCmd,
     importCmd,
-    statusBarItem
+    statusBarItem,
+    configListener
   );
 }
 
