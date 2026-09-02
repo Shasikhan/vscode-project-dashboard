@@ -85,6 +85,7 @@
   const formProjectPath = document.getElementById('form-project-path');
   const formProjectCategory = document.getElementById('form-project-category');
   const formProjectColor = document.getElementById('form-project-color');
+  const formProjectColorHex = document.getElementById('form-project-color-hex');
   const formProjectTags = document.getElementById('form-project-tags');
   const formProjectDescription = document.getElementById('form-project-description');
   const formProjectFavorite = document.getElementById('form-project-favorite');
@@ -100,6 +101,7 @@
   const formCatId = document.getElementById('form-cat-id');
   const formCatName = document.getElementById('form-cat-name');
   const formCatColor = document.getElementById('form-cat-color');
+  const formCatColorHex = document.getElementById('form-cat-color-hex');
   const btnSaveCategory = document.getElementById('btn-save-category');
   const btnCancelCatEdit = document.getElementById('btn-cancel-cat-edit');
   const categoriesManageList = document.getElementById('categories-manage-list');
@@ -180,15 +182,20 @@
   }
 
   function selectProjectColor(color) {
+    if (!color) color = '#3B82F6';
+    if (!color.startsWith('#')) color = '#' + color;
     state.selectedColor = color;
     if (formProjectColor) formProjectColor.value = color;
+    if (formProjectColorHex && document.activeElement !== formProjectColorHex) {
+      formProjectColorHex.value = color.toUpperCase();
+    }
     if (customColorHex) customColorHex.textContent = color.toUpperCase();
 
     // Update swatches active state
     if (colorPresetsContainer) {
       const swatches = colorPresetsContainer.querySelectorAll('.color-swatch');
       swatches.forEach(swatch => {
-        swatch.classList.toggle('active', swatch.dataset.color === color);
+        swatch.classList.toggle('active', swatch.dataset.color.toLowerCase() === color.toLowerCase());
       });
     }
   }
@@ -322,6 +329,28 @@
       selectProjectColor(e.target.value);
     });
 
+    formProjectColorHex?.addEventListener('input', e => {
+      let val = e.target.value.trim();
+      if (val && !val.startsWith('#')) {
+        val = '#' + val;
+      }
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        selectProjectColor(val);
+      }
+    });
+
+    formProjectColorHex?.addEventListener('blur', e => {
+      let val = e.target.value.trim();
+      if (val && !val.startsWith('#')) {
+        val = '#' + val;
+      }
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        selectProjectColor(val);
+      } else if (state.selectedColor) {
+        formProjectColorHex.value = state.selectedColor.toUpperCase();
+      }
+    });
+
     projectForm?.addEventListener('submit', e => {
       e.preventDefault();
       saveProjectForm();
@@ -330,6 +359,34 @@
     // Category Modal
     btnCloseCatModal?.addEventListener('click', () => closeCategoryModal());
     btnDoneCategories?.addEventListener('click', () => closeCategoryModal());
+
+    formCatColor?.addEventListener('input', e => {
+      if (formCatColorHex && document.activeElement !== formCatColorHex) {
+        formCatColorHex.value = e.target.value.toUpperCase();
+      }
+    });
+
+    formCatColorHex?.addEventListener('input', e => {
+      let val = e.target.value.trim();
+      if (val && !val.startsWith('#')) {
+        val = '#' + val;
+      }
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        if (formCatColor) formCatColor.value = val;
+      }
+    });
+
+    formCatColorHex?.addEventListener('blur', e => {
+      let val = e.target.value.trim();
+      if (val && !val.startsWith('#')) {
+        val = '#' + val;
+      }
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        if (formCatColor) formCatColor.value = val;
+      } else if (formCatColor) {
+        formCatColorHex.value = formCatColor.value.toUpperCase();
+      }
+    });
     categoryForm?.addEventListener('submit', e => {
       e.preventDefault();
       saveCategoryForm();
@@ -396,7 +453,11 @@
 
   function createCategoryChip(id, name, color, count) {
     const chip = document.createElement('button');
-    chip.className = `category-chip ${state.selectedCategory === id ? 'active' : ''}`;
+    const isActive = state.selectedCategory === id;
+    chip.className = `category-chip ${isActive ? 'active' : ''}`;
+    if (color) {
+      chip.style.setProperty('--category-color', color);
+    }
     
     let dotHtml = color ? `<span class="category-dot" style="background-color: ${escapeHtml(color)};"></span>` : '';
     chip.innerHTML = `
@@ -566,18 +627,6 @@
           </button>
         </div>
 
-        ${(project.techStack && project.techStack.length > 0) || (project.tags && project.tags.length > 0) ? `
-          <div class="project-tags-row">
-            ${(project.techStack || []).map(t => `<span class="tech-stack-badge">${escapeHtml(t)}</span>`).join('')}
-            ${(project.tags || []).map(t => `
-              <span class="project-tag">
-                #${escapeHtml(t)}
-                <button type="button" class="btn-remove-tag" data-tag="${escapeHtml(t)}" title="Remove tag ${escapeHtml(t)}">&times;</button>
-              </span>
-            `).join('')}
-          </div>
-        ` : ''}
-
         ${project.gitInfo && project.gitInfo.isGit ? `
           <div class="project-git-row">
             <span class="git-badge git-branch-badge" title="Git Branch: ${escapeHtml(project.gitInfo.branch || 'HEAD')}">
@@ -600,6 +649,23 @@
                 ${(project.gitInfo.ahead || 0) > 0 ? `↑${project.gitInfo.ahead}` : ''} ${(project.gitInfo.behind || 0) > 0 ? `↓${project.gitInfo.behind}` : ''}
               </span>
             ` : ''}
+          </div>
+        ` : ''}
+
+        ${project.techStack && project.techStack.length > 0 ? `
+          <div class="project-tech-row">
+            ${project.techStack.map(t => `<span class="tech-stack-badge">${escapeHtml(t)}</span>`).join('')}
+          </div>
+        ` : ''}
+
+        ${project.tags && project.tags.length > 0 ? `
+          <div class="project-tags-row">
+            ${project.tags.map(t => `
+              <span class="project-tag">
+                #${escapeHtml(t)}
+                <button type="button" class="btn-remove-tag" data-tag="${escapeHtml(t)}" title="Remove tag ${escapeHtml(t)}">&times;</button>
+              </span>
+            `).join('')}
           </div>
         ` : ''}
 
@@ -806,6 +872,7 @@
     if (formCatId) formCatId.value = '';
     if (formCatName) formCatName.value = '';
     if (formCatColor) formCatColor.value = '#3b82f6';
+    if (formCatColorHex) formCatColorHex.value = '#3B82F6';
     if (btnSaveCategory) btnSaveCategory.textContent = 'Add Category';
     if (btnCancelCatEdit) btnCancelCatEdit.style.display = 'none';
   }
@@ -862,6 +929,7 @@
         if (formCatId) formCatId.value = cat.id;
         if (formCatName) formCatName.value = cat.name;
         if (formCatColor) formCatColor.value = cat.color;
+        if (formCatColorHex) formCatColorHex.value = cat.color.toUpperCase();
         if (btnSaveCategory) btnSaveCategory.textContent = 'Update';
         if (btnCancelCatEdit) btnCancelCatEdit.style.display = 'inline-flex';
         formCatName?.focus();

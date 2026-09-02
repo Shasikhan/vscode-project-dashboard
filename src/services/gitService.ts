@@ -25,14 +25,14 @@ export class GitService {
         'git',
         ['status', '--porcelain=v1', '-b'],
         { cwd: folderPath, timeout: 3000 },
-        (error, stdout, _stderr) => {
+        (error: Error | null, stdout: string, _stderr: string) => {
           if (error) {
             // Either not a git repo or git is not available
             return resolve({ isGit: false });
           }
 
           try {
-            const lines = stdout.split('\n').map(l => l.trimEnd()).filter(Boolean);
+            const lines = stdout.split('\n').map((l: string) => l.trimEnd()).filter(Boolean);
             if (lines.length === 0) {
               return resolve({ isGit: true, clean: true, branch: 'unknown', modified: 0, untracked: 0 });
             }

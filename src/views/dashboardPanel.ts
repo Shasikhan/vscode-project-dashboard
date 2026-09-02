@@ -461,8 +461,8 @@ export class DashboardPanel {
                 <!-- Preset color swatches -->
               </div>
               <div class="custom-color-wrapper">
-                <input type="color" id="form-project-color" value="#3b82f6" title="Custom color" />
-                <span id="custom-color-hex" class="hex-label">#3B82F6</span>
+                <input type="color" id="form-project-color" value="#3b82f6" title="Custom color picker" />
+                <input type="text" id="form-project-color-hex" class="hex-input" value="#3B82F6" placeholder="#3B82F6" maxlength="7" spellcheck="false" autocomplete="off" />
               </div>
             </div>
           </div>
@@ -512,7 +512,8 @@ export class DashboardPanel {
             <div class="form-group">
               <label>Color</label>
               <div class="cat-color-row">
-                <input type="color" id="form-cat-color" value="#3b82f6" />
+                <input type="color" id="form-cat-color" value="#3b82f6" title="Category color picker" />
+                <input type="text" id="form-cat-color-hex" class="hex-input" value="#3B82F6" placeholder="#3B82F6" maxlength="7" spellcheck="false" autocomplete="off" />
                 <button type="submit" id="btn-save-category" class="primary-button btn-small">Add Category</button>
                 <button type="button" id="btn-cancel-cat-edit" class="secondary-button btn-small" style="display: none;">Cancel</button>
               </div>

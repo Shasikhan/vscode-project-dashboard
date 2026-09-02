@@ -277,7 +277,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           <label>Color Accent</label>
           <div class="color-picker-container">
             <div class="color-presets" id="color-presets"></div>
-            <input type="color" id="form-project-color" value="#3b82f6" />
+            <div class="custom-color-wrapper">
+              <input type="color" id="form-project-color" value="#3b82f6" title="Custom color picker" />
+              <input type="text" id="form-project-color-hex" class="hex-input" value="#3B82F6" placeholder="#3B82F6" maxlength="7" spellcheck="false" autocomplete="off" />
+            </div>
           </div>
         </div>
         <div class="form-group">
@@ -315,7 +318,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           <div class="form-group">
             <label>Color</label>
             <div class="cat-color-row">
-              <input type="color" id="form-cat-color" value="#3b82f6" />
+              <input type="color" id="form-cat-color" value="#3b82f6" title="Category color picker" />
+              <input type="text" id="form-cat-color-hex" class="hex-input" value="#3B82F6" placeholder="#3B82F6" maxlength="7" spellcheck="false" autocomplete="off" />
               <button type="submit" id="btn-save-category" class="primary-button btn-small">Save</button>
             </div>
           </div>
