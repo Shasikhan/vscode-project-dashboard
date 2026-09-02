@@ -162,6 +162,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           break;
         }
 
+        case 'reorderCategories': {
+          await this._storageService.reorderCategories(message.categoryIds);
+          break;
+        }
+
         case 'showNotification': {
           if (message.type === 'error') {
             vscode.window.showErrorMessage(message.message);

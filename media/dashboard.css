@@ -915,6 +915,37 @@ input[type="color"]::-webkit-color-swatch {
   border-radius: 4px;
 }
 
+.cat-drag-handle {
+  cursor: grab;
+  color: var(--vscode-descriptionForeground, #64748b);
+  display: flex;
+  align-items: center;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.category-manage-item.draggable {
+  cursor: default;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.category-manage-item.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+  border-color: var(--vscode-focusBorder, #3b82f6);
+}
+
+.category-manage-item.drag-over {
+  border-color: var(--vscode-focusBorder, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.btn-move-cat:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Git Status Badges */
 .project-git-row {
   display: flex;

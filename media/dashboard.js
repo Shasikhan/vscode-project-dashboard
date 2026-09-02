@@ -429,24 +429,33 @@
     if (!categoryFilterBar) return;
     categoryFilterBar.innerHTML = '';
 
-    // "All" filter chip
+    // 1. "All" filter chip (always first)
     const allColor = (state.preferences && state.preferences.allCategoryColor) || '#64748b';
     const allChip = createCategoryChip('all', 'All', allColor, state.projects.length);
     categoryFilterBar.appendChild(allChip);
 
-    // "Favorites" filter chip
+    // 2. "Favorites" filter chip (always second)
     const favCount = state.projects.filter(p => p.favorite).length;
     const favChip = createCategoryChip('favorites', '★ Favorites', '#fbbf24', favCount);
     categoryFilterBar.appendChild(favChip);
 
-    // Dynamic Category Chips
-    state.categories.forEach(cat => {
+    // 3. Dynamic Category Chips (Archive stays at the end of custom categories)
+    const normalCategories = state.categories.filter(c => c.id !== 'cat-archive' && c.name.trim().toLowerCase() !== 'archive');
+    const archiveCategories = state.categories.filter(c => c.id === 'cat-archive' || c.name.trim().toLowerCase() === 'archive');
+
+    normalCategories.forEach(cat => {
       const count = state.projects.filter(p => p.categoryId === cat.id).length;
       const chip = createCategoryChip(cat.id, cat.name, cat.color, count);
       categoryFilterBar.appendChild(chip);
     });
 
-    // "Uncategorized" chip if any exists
+    archiveCategories.forEach(cat => {
+      const count = state.projects.filter(p => p.categoryId === cat.id).length;
+      const chip = createCategoryChip(cat.id, cat.name, cat.color, count);
+      categoryFilterBar.appendChild(chip);
+    });
+
+    // 4. "Uncategorized" chip if any exists (always at the very end)
     const uncatCount = state.projects.filter(p => !p.categoryId).length;
     if (uncatCount > 0) {
       const uncatChip = createCategoryChip('uncategorized', 'Uncategorized', '#94a3b8', uncatCount);
@@ -905,13 +914,39 @@
     resetCategoryForm();
   }
 
+  let draggedCatId = null;
+
+  function moveCategory(index, direction) {
+    const normalCategories = state.categories.filter(c => c.id !== 'cat-archive' && c.name.trim().toLowerCase() !== 'archive');
+    const archiveCategories = state.categories.filter(c => c.id === 'cat-archive' || c.name.trim().toLowerCase() === 'archive');
+
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= normalCategories.length) return;
+
+    // Swap items
+    const temp = normalCategories[index];
+    normalCategories[index] = normalCategories[targetIndex];
+    normalCategories[targetIndex] = temp;
+
+    // Combine and update
+    const newCategories = [...normalCategories, ...archiveCategories];
+    state.categories = newCategories;
+
+    vscode.postMessage({
+      command: 'reorderCategories',
+      categoryIds: newCategories.map(c => c.id)
+    });
+
+    render();
+  }
+
   function renderManageCategoriesList() {
     if (!categoriesManageList) return;
     categoriesManageList.innerHTML = '';
 
     const allColor = (state.preferences && state.preferences.allCategoryColor) || '#64748b';
 
-    // Built-in "All" category item
+    // 1. Built-in "All" category item (Fixed at top)
     const allItem = document.createElement('div');
     allItem.className = 'category-manage-item';
     allItem.innerHTML = `
@@ -944,13 +979,135 @@
 
     categoriesManageList.appendChild(allItem);
 
-    state.categories.forEach(cat => {
+    // 2. Custom reorderable categories (between All/Favorites and Archive)
+    const normalCategories = state.categories.filter(c => c.id !== 'cat-archive' && c.name.trim().toLowerCase() !== 'archive');
+    const archiveCategories = state.categories.filter(c => c.id === 'cat-archive' || c.name.trim().toLowerCase() === 'archive');
+
+    normalCategories.forEach((cat, idx) => {
+      const isFirst = idx === 0;
+      const isLast = idx === normalCategories.length - 1;
+
+      const item = document.createElement('div');
+      item.className = 'category-manage-item draggable';
+      item.setAttribute('draggable', 'true');
+      item.dataset.catId = cat.id;
+
+      item.innerHTML = `
+        <div class="cat-item-left">
+          <span class="cat-drag-handle" title="Drag to reorder">⋮⋮</span>
+          <span class="category-dot" style="background-color: ${escapeHtml(cat.color)};"></span>
+          <span style="font-weight: 500;">${escapeHtml(cat.name)}</span>
+        </div>
+        <div class="cat-item-actions">
+          <button class="card-action-btn btn-move-cat btn-move-up" title="Move Up" ${isFirst ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </button>
+          <button class="card-action-btn btn-move-cat btn-move-down" title="Move Down" ${isLast ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <button class="card-action-btn btn-edit-cat" title="Edit Category">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+          <button class="card-action-btn delete-btn btn-del-cat" title="Delete Category">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+        </div>
+      `;
+
+      // Up / Down Button Listeners
+      item.querySelector('.btn-move-up')?.addEventListener('click', e => {
+        e.stopPropagation();
+        moveCategory(idx, -1);
+      });
+
+      item.querySelector('.btn-move-down')?.addEventListener('click', e => {
+        e.stopPropagation();
+        moveCategory(idx, 1);
+      });
+
+      // Edit Button Listener
+      item.querySelector('.btn-edit-cat')?.addEventListener('click', () => {
+        state.editingCategoryId = cat.id;
+        if (formCatId) formCatId.value = cat.id;
+        if (formCatName) {
+          formCatName.value = cat.name;
+          formCatName.disabled = false;
+          formCatName.title = '';
+        }
+        if (formCatColor) formCatColor.value = cat.color;
+        if (formCatColorHex) formCatColorHex.value = cat.color.toUpperCase();
+        if (btnSaveCategory) btnSaveCategory.textContent = 'Update';
+        if (btnCancelCatEdit) btnCancelCatEdit.style.display = 'inline-flex';
+        formCatName?.focus();
+      });
+
+      // Delete Button Listener
+      item.querySelector('.btn-del-cat')?.addEventListener('click', () => {
+        vscode.postMessage({ command: 'deleteCategory', id: cat.id });
+      });
+
+      // Drag and Drop Listeners
+      item.addEventListener('dragstart', e => {
+        draggedCatId = cat.id;
+        e.dataTransfer.effectAllowed = 'move';
+        item.classList.add('dragging');
+      });
+
+      item.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (draggedCatId && draggedCatId !== cat.id) {
+          item.classList.add('drag-over');
+        }
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('drag-over');
+      });
+
+      item.addEventListener('drop', e => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+        if (!draggedCatId || draggedCatId === cat.id) return;
+
+        const fromIndex = normalCategories.findIndex(c => c.id === draggedCatId);
+        const toIndex = normalCategories.findIndex(c => c.id === cat.id);
+
+        if (fromIndex >= 0 && toIndex >= 0) {
+          const [movedCat] = normalCategories.splice(fromIndex, 1);
+          normalCategories.splice(toIndex, 0, movedCat);
+
+          const newCategories = [...normalCategories, ...archiveCategories];
+          state.categories = newCategories;
+
+          vscode.postMessage({
+            command: 'reorderCategories',
+            categoryIds: newCategories.map(c => c.id)
+          });
+
+          render();
+        }
+      });
+
+      item.addEventListener('dragend', () => {
+        draggedCatId = null;
+        categoriesManageList.querySelectorAll('.category-manage-item').forEach(el => {
+          el.classList.remove('dragging', 'drag-over');
+        });
+      });
+
+      categoriesManageList.appendChild(item);
+    });
+
+    // 3. Archive categories (Fixed at bottom)
+    archiveCategories.forEach(cat => {
       const item = document.createElement('div');
       item.className = 'category-manage-item';
       item.innerHTML = `
         <div class="cat-item-left">
           <span class="category-dot" style="background-color: ${escapeHtml(cat.color)};"></span>
           <span style="font-weight: 500;">${escapeHtml(cat.name)}</span>
+          <span class="builtin-badge">Archive</span>
         </div>
         <div class="cat-item-actions">
           <button class="card-action-btn btn-edit-cat" title="Edit Category">

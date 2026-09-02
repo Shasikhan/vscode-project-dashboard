@@ -218,6 +218,9 @@ export class StorageService {
 
     const reordered: Category[] = [];
     for (const id of categoryIds) {
+      if (id === 'all' || id === 'favorites') {
+        continue;
+      }
       const cat = categoryMap.get(id);
       if (cat) {
         reordered.push(cat);
@@ -226,6 +229,13 @@ export class StorageService {
     }
     // append any remaining
     categoryMap.forEach(cat => reordered.push(cat));
+
+    // Ensure Archive (if present) is always pinned at the end of the categories list
+    const archiveIndex = reordered.findIndex(c => c.id === 'cat-archive' || c.name.trim().toLowerCase() === 'archive');
+    if (archiveIndex >= 0 && archiveIndex !== reordered.length - 1) {
+      const [archiveCat] = reordered.splice(archiveIndex, 1);
+      reordered.push(archiveCat);
+    }
 
     await this.context.globalState.update(STORAGE_KEY_CATEGORIES, reordered);
     this.notifyChange();
