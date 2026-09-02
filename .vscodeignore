@@ -5,5 +5,6 @@ tsconfig.json
 esbuild.js
 .gitignore
 *.vsix
+media/preview.png
 preview.html
 LICENSE*

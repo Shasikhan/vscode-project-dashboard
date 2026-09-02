@@ -2,7 +2,7 @@
   "name": "vscode-project-dashboard",
   "displayName": "Project Dashboard - Workspace Hub",
   "description": "Organize, categorize, color-code, and launch all your projects from a modern dashboard in VS Code.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "ShafqatUllahKhan",
   "qna": "marketplace",
   "icon": "media/icon.png",
