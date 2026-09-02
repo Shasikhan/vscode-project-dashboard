@@ -61,16 +61,16 @@ Configure these options in VS Code Settings (`Cmd+,` or `Ctrl+,`):
 | Setting                                   | Default | Description                                                                          |
 | :---------------------------------------- | :------ | :----------------------------------------------------------------------------------- |
 | `projectDashboard.openOnStartupWhenEmpty` | `false` | Automatically opens Project Dashboard on launch when no folder or workspace is open. |
-| `projectDashboard.showStatusBarItem`      | `true`  | Shows/hides the `$(dashboard) Projects` status bar button on the right side.         |
+| `projectDashboard.showStatusBarItem`      | `true`  | Shows/hides the `$(layout-dashboard) Projects` status bar button on the right side. |
 
 ---
 
-## Development & Debugging
+## 🤝 Contributing
 
-1. Open this repository in VS Code:
-   ```bash
-   npm install
-   npm run compile
-   ```
-2. Press `F5` to start a new VS Code Extension Development Host window.
-3. In the new window, click the `Projects` status bar item or run `Project Dashboard: Open Dashboard`.
+Contributions are welcome! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on local development, adding tech stack rules, and submitting pull requests.
+
+---
+
+## 📜 License
+
+This project is open-source software licensed under the [MIT License](LICENSE.txt).
