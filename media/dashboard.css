@@ -904,6 +904,17 @@ input[type="color"]::-webkit-color-swatch {
   gap: 6px;
 }
 
+.builtin-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.08));
+  color: var(--vscode-badge-foreground, #94a3b8);
+  border-radius: 4px;
+}
+
 /* Git Status Badges */
 .project-git-row {
   display: flex;

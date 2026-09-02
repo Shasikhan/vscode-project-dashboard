@@ -25,6 +25,7 @@
   let state = {
     projects: [],
     categories: [],
+    preferences: {},
     selectedCategory: savedState.selectedCategory || 'all', // 'all' | 'favorites' | categoryId
     searchQuery: '',
     sortBy: savedState.sortBy || 'recent',
@@ -209,6 +210,7 @@
         case 'setData':
           state.projects = message.data.projects || [];
           state.categories = message.data.categories || [];
+          state.preferences = message.data.preferences || {};
           if (message.data.preferences) {
             if (message.data.preferences.sortBy) {
               state.sortBy = message.data.preferences.sortBy;
@@ -428,7 +430,8 @@
     categoryFilterBar.innerHTML = '';
 
     // "All" filter chip
-    const allChip = createCategoryChip('all', 'All', '#64748b', state.projects.length);
+    const allColor = (state.preferences && state.preferences.allCategoryColor) || '#64748b';
+    const allChip = createCategoryChip('all', 'All', allColor, state.projects.length);
     categoryFilterBar.appendChild(allChip);
 
     // "Favorites" filter chip
@@ -870,7 +873,11 @@
   function resetCategoryForm() {
     state.editingCategoryId = null;
     if (formCatId) formCatId.value = '';
-    if (formCatName) formCatName.value = '';
+    if (formCatName) {
+      formCatName.value = '';
+      formCatName.disabled = false;
+      formCatName.title = '';
+    }
     if (formCatColor) formCatColor.value = '#3b82f6';
     if (formCatColorHex) formCatColorHex.value = '#3B82F6';
     if (btnSaveCategory) btnSaveCategory.textContent = 'Add Category';
@@ -878,13 +885,14 @@
   }
 
   function saveCategoryForm() {
-    const name = formCatName?.value.trim();
+    const isAll = state.editingCategoryId === 'all';
+    const name = isAll ? 'All' : formCatName?.value.trim();
     const color = formCatColor?.value || '#3b82f6';
 
     if (!name) return;
 
     const category = {
-      id: state.editingCategoryId || ('cat-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)),
+      id: isAll ? 'all' : (state.editingCategoryId || ('cat-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7))),
       name,
       color
     };
@@ -901,10 +909,40 @@
     if (!categoriesManageList) return;
     categoriesManageList.innerHTML = '';
 
-    if (state.categories.length === 0) {
-      categoriesManageList.innerHTML = '<p style="font-size: 12px; opacity: 0.6;">No categories created yet.</p>';
-      return;
-    }
+    const allColor = (state.preferences && state.preferences.allCategoryColor) || '#64748b';
+
+    // Built-in "All" category item
+    const allItem = document.createElement('div');
+    allItem.className = 'category-manage-item';
+    allItem.innerHTML = `
+      <div class="cat-item-left">
+        <span class="category-dot" style="background-color: ${escapeHtml(allColor)};"></span>
+        <span style="font-weight: 500;">All</span>
+        <span class="builtin-badge">Default</span>
+      </div>
+      <div class="cat-item-actions">
+        <button class="card-action-btn btn-edit-cat" title="Customize Color for All">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+      </div>
+    `;
+
+    allItem.querySelector('.btn-edit-cat')?.addEventListener('click', () => {
+      state.editingCategoryId = 'all';
+      if (formCatId) formCatId.value = 'all';
+      if (formCatName) {
+        formCatName.value = 'All';
+        formCatName.disabled = true;
+        formCatName.title = 'The "All" category name cannot be changed.';
+      }
+      if (formCatColor) formCatColor.value = allColor;
+      if (formCatColorHex) formCatColorHex.value = allColor.toUpperCase();
+      if (btnSaveCategory) btnSaveCategory.textContent = 'Update';
+      if (btnCancelCatEdit) btnCancelCatEdit.style.display = 'inline-flex';
+      formCatColor?.focus();
+    });
+
+    categoriesManageList.appendChild(allItem);
 
     state.categories.forEach(cat => {
       const item = document.createElement('div');
@@ -927,7 +965,11 @@
       item.querySelector('.btn-edit-cat')?.addEventListener('click', () => {
         state.editingCategoryId = cat.id;
         if (formCatId) formCatId.value = cat.id;
-        if (formCatName) formCatName.value = cat.name;
+        if (formCatName) {
+          formCatName.value = cat.name;
+          formCatName.disabled = false;
+          formCatName.title = '';
+        }
         if (formCatColor) formCatColor.value = cat.color;
         if (formCatColorHex) formCatColorHex.value = cat.color.toUpperCase();
         if (btnSaveCategory) btnSaveCategory.textContent = 'Update';

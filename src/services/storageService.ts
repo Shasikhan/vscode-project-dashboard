@@ -11,7 +11,8 @@ const STORAGE_KEY_PREFERENCES = 'projectDashboard.preferences';
 export const DEFAULT_PREFERENCES: UserPreferences = {
   sortBy: 'recent',
   viewMode: 'grid',
-  selectedCategory: 'all'
+  selectedCategory: 'all',
+  allCategoryColor: '#64748b'
 };
 
 export const DEFAULT_CATEGORIES: Category[] = [
@@ -168,6 +169,12 @@ export class StorageService {
   }
 
   public async saveCategory(category: Category): Promise<void> {
+    if (category.id === 'all') {
+      await this.updatePreferences({ allCategoryColor: category.color });
+      this.notifyChange();
+      return;
+    }
+
     const data = this.getData();
     const existingIndex = data.categories.findIndex(c => c.id === category.id);
 
@@ -185,6 +192,9 @@ export class StorageService {
   }
 
   public async deleteCategory(id: string): Promise<void> {
+    if (id === 'all') {
+      return;
+    }
     const data = this.getData();
     const updatedCategories = data.categories.filter(c => c.id !== id);
 

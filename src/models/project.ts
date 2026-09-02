@@ -35,6 +35,7 @@ export interface UserPreferences {
   sortBy: string;
   viewMode: 'grid' | 'list';
   selectedCategory: string;
+  allCategoryColor?: string;
 }
 
 export interface DashboardData {
