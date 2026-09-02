@@ -63,14 +63,3 @@ Configure these options in VS Code Settings (`Cmd+,` or `Ctrl+,`):
 | `projectDashboard.openOnStartupWhenEmpty` | `false` | Automatically opens Project Dashboard on launch when no folder or workspace is open. |
 | `projectDashboard.showStatusBarItem`      | `true`  | Shows/hides the `$(layout-dashboard) Projects` status bar button on the right side. |
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on local development, adding tech stack rules, and submitting pull requests.
-
----
-
-## 📜 License
-
-This project is open-source software licensed under the [MIT License](LICENSE.txt).
