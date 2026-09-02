@@ -1,20 +1,15 @@
 {
   "name": "vscode-project-dashboard",
-  "displayName": "Project Dashboard",
+  "displayName": "Project Dashboard - Workspace Hub",
   "description": "Organize, categorize, color-code, and launch all your projects from a modern dashboard in VS Code.",
-  "version": "1.0.0",
-  "publisher": "shasikhan",
-  "license": "MIT",
+  "version": "1.0.2",
+  "publisher": "ShafqatUllahKhan",
+  "qna": "marketplace",
   "icon": "media/icon.png",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Shasikhan/vscode-project-dashboard"
-  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Productivity",
     "Other"
   ],
   "keywords": [
@@ -22,6 +17,7 @@
     "dashboard",
     "manager",
     "workspace",
+    "productivity",
     "categories",
     "favorites"
   ],
@@ -127,8 +123,8 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "package": "node esbuild.js --production",
-    "package-vsix": "vsce package --allow-star-activation",
-    "publish-extension": "vsce publish --allow-star-activation",
+    "package-vsix": "vsce package --allow-star-activation --allow-missing-repository --baseImagesUrl https://ShafqatUllahKhan.gallerycdn.vsassets.io/extensions/ShafqatUllahKhan/vscode-project-dashboard/1.0.2/assetbyname --baseContentUrl https://ShafqatUllahKhan.gallerycdn.vsassets.io/extensions/ShafqatUllahKhan/vscode-project-dashboard/1.0.2/assetbyname",
+    "publish-extension": "vsce publish --allow-star-activation --allow-missing-repository --baseImagesUrl https://ShafqatUllahKhan.gallerycdn.vsassets.io/extensions/ShafqatUllahKhan/vscode-project-dashboard/1.0.2/assetbyname --baseContentUrl https://ShafqatUllahKhan.gallerycdn.vsassets.io/extensions/ShafqatUllahKhan/vscode-project-dashboard/1.0.2/assetbyname",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
