@@ -7,4 +7,5 @@ esbuild.js
 *.vsix
 media/preview.png
 preview.html
-LICENSE*
+.github/**
+CONTRIBUTING.md
