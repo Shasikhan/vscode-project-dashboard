@@ -1,6 +1,8 @@
-# Project Dashboard for VS Code
+# Project Dashboard - Workspace Hub
 
 A modern, fast, and intuitive dashboard extension for Visual Studio Code to manage, color-code, categorize, and launch all your developer projects from a single unified hub.
+
+> 🎉 **Project Dashboard is now open source!** The full source code is available on [GitHub](https://github.com/Shasikhan/vscode-project-dashboard) under the MIT License. Stars, issues, and pull requests are welcome.
 
 ![Project Dashboard Preview](https://github.com/user-attachments/assets/a3eb2fdd-9728-4447-b570-af4ecfdf2fd1)
 
@@ -64,3 +66,15 @@ Configure these options in VS Code Settings (`Cmd+,` or `Ctrl+,`):
 | :---------------------------------------- | :------ | :----------------------------------------------------------------------------------- |
 | `projectDashboard.openOnStartupWhenEmpty` | `false` | Automatically opens Project Dashboard on launch when no folder or workspace is open. |
 | `projectDashboard.showStatusBarItem`      | `true`  | Shows/hides the `$(layout-dashboard) Projects` status bar button on the right side.  |
+
+---
+
+## Source Code & Issues
+
+This project is **open source** (MIT licensed) — browse the code, open an issue, or send a pull request:
+
+- **Repository:** https://github.com/Shasikhan/vscode-project-dashboard
+- **Report a bug / request a feature:** https://github.com/Shasikhan/vscode-project-dashboard/issues
+- **Contributing:** see [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Licensed under the [MIT License](LICENSE).
